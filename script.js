@@ -2,9 +2,6 @@ class MedaclinicApp {
     constructor() {
         this.apiBase = 'http://localhost:3000/api';
 
-        // =====================
-        // CRUD LOCAL ACCIONES
-        // =====================
         this.acciones = JSON.parse(localStorage.getItem('acciones')) || [];
 
         this.init();
@@ -33,6 +30,9 @@ class MedaclinicApp {
         this.initDashboard();
     }
 
+    // =====================
+    // LOGIN
+    // =====================
     async login(e) {
         e.preventDefault();
 
@@ -79,11 +79,61 @@ class MedaclinicApp {
         }
     }
 
-    register(e) {
+    // =====================
+    // 🔥 REGISTER (ARREGLADO)
+    // =====================
+    async register(e) {
         e.preventDefault();
-        this.showAlert('Registro disponible en backend', 'success');
+
+        const username =
+            document.getElementById('regUsername')?.value ||
+            document.getElementById('username')?.value;
+
+        const email =
+            document.getElementById('regEmail')?.value || '';
+
+        const password =
+            document.getElementById('regPassword')?.value ||
+            document.getElementById('password')?.value;
+
+        if (!username || !password) {
+            this.showAlert('Completa usuario y contraseña', 'error');
+            return;
+        }
+
+        try {
+            const response = await fetch(`${this.apiBase}/register`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    username,
+                    email,
+                    password
+                })
+            });
+
+            const data = await response.json();
+
+            if (data.success) {
+                this.showAlert('Cuenta creada correctamente', 'success');
+
+                setTimeout(() => {
+                    window.location.href = 'index.html';
+                }, 1200);
+
+            } else {
+                this.showAlert(data.error || 'Error al registrar', 'error');
+            }
+
+        } catch (error) {
+            console.error(error);
+            this.showAlert('Error de servidor', 'error');
+        }
     }
 
+    // =====================
+    // PASSWORD TOGGLE
+    // =====================
     togglePassword() {
         const passInput = document.getElementById('password');
         const toggle = document.getElementById('togglePass');
@@ -120,7 +170,6 @@ class MedaclinicApp {
         this.loadStats();
         this.bindMenuEvents();
 
-        // 🔥 CRUD INIT
         this.renderAcciones();
         this.bindDashboardActions();
     }
@@ -231,10 +280,7 @@ class MedaclinicApp {
         setTimeout(() => alert.remove(), 3000);
     }
 
-    // =========================
-    // CRUD ACCIONES (NUEVO)
-    // =========================
-
+    // CRUD ACCIONES
     crearAccion(data) {
         data.id = Date.now();
         this.acciones.push(data);
@@ -264,7 +310,6 @@ class MedaclinicApp {
                     <strong>${a.paciente}</strong><br>
                     ${a.doctor} - ${a.fecha}<br>
                     <span>${a.estado}</span>
-
                     <button onclick="app.eliminarAccion(${a.id})">🗑️</button>
                 </div>
             `;
@@ -275,17 +320,10 @@ class MedaclinicApp {
         const btnNew = document.querySelector('.btn-primary');
         const btnExport = document.querySelector('.btn-secondary');
 
-        btnNew?.addEventListener('click', () => {
-            this.openModal();
-        });
+        btnNew?.addEventListener('click', () => this.openModal());
+        btnExport?.addEventListener('click', () => this.exportExcel());
 
-        btnExport?.addEventListener('click', () => {
-            this.exportExcel();
-        });
-
-        document.getElementById('saveAccionBtn')?.addEventListener('click', () => {
-            this.saveNewAccion();
-        });
+        document.getElementById('saveAccionBtn')?.addEventListener('click', () => this.saveNewAccion());
     }
 
     openModal() {
@@ -318,5 +356,4 @@ class MedaclinicApp {
     }
 }
 
-// Init
 const app = new MedaclinicApp();
